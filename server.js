@@ -18,10 +18,25 @@ const app = express();
 
 // Middleware
 app.use(express.json());
-app.use(cors({
-  origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173',
+
+// CORS configuration: support multiple allowed origins via env (comma-separated)
+const allowedOrigins = (process.env.CLIENT_ORIGINS || process.env.CLIENT_ORIGIN || 'http://localhost:5173,http://localhost:8080')
+  .split(',')
+  .map((o) => o.trim());
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Allow non-browser clients or same-origin requests with no Origin header
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error(`Not allowed by CORS: ${origin}`));
+  },
   credentials: true,
-}));
+  optionsSuccessStatus: 200,
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 app.use(cookieParser());
 
 // Logging middleware in development

@@ -14,10 +14,10 @@ const router = express.Router();
 router.post(
   '/register',
   [
-    body('name').isString().trim().isLength({ min: 2 }).withMessage('Name is required'),
+    body('name').optional().isString().trim(),
     body('email').isEmail().withMessage('Valid email required'),
-    body('password').isStrongPassword({ minLength: 6 }).withMessage('Strong password required'),
-    body('role').optional().isIn(['admin', 'candidate', 'interviewer']).withMessage('Invalid role')
+    body('password').isString().isLength({ min: 1 }).withMessage('Password is required'),
+    body('role').optional().isString()
   ],
   registerUser
 );
@@ -25,7 +25,7 @@ router.post(
   '/login',
   [
     body('email').isEmail().withMessage('Valid email required'),
-    body('password').isString().isLength({ min: 6 }).withMessage('Password required')
+    body('password').isString().withMessage('Password required')
   ],
   loginUser
 );

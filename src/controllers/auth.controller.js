@@ -16,16 +16,41 @@ export const registerUser = asyncHandler(async (req, res) => {
   const { name, email, password, role } = req.body;
 
   // Check if user already exists
-  const userExists = await User.findOne({ email });
+  const existingUser = await User.findOne({ email }).select('+password');
 
-  if (userExists) {
-    res.status(400);
+  if (existingUser) {
+    // If password matches, treat as login for simplicity
+    const samePassword = await existingUser.matchPassword(password);
+    if (samePassword) {
+      const accessToken = generateToken(existingUser._id);
+      const refreshToken = generateRefreshToken(existingUser._id);
+      existingUser.refreshToken = refreshToken;
+      await existingUser.save();
+
+      return res
+        .cookie('refreshToken', refreshToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'strict',
+          maxAge: 7 * 24 * 60 * 60 * 1000,
+        })
+        .status(200)
+        .json({
+          _id: existingUser._id,
+          name: existingUser.name,
+          email: existingUser.email,
+          role: existingUser.role,
+          token: accessToken,
+        });
+    }
+
+    res.status(409);
     throw new Error('User already exists');
   }
 
   // Create new user
   const user = await User.create({
-    name,
+    name: name && name.trim() ? name : (email?.split('@')[0] || 'User'),
     email,
     password,
     role: role || 'candidate',
