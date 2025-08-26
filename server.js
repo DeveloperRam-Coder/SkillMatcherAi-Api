@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import morgan from 'morgan';
 import { connectDB } from './src/config/db.js';
+import cookieParser from 'cookie-parser';
 import authRoutes from './src/routes/auth.routes.js';
 import userRoutes from './src/routes/user.routes.js';
 import { errorHandler } from './src/middlewares/error.middleware.js';
@@ -17,7 +18,11 @@ const app = express();
 
 // Middleware
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+  origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173',
+  credentials: true,
+}));
+app.use(cookieParser());
 
 // Logging middleware in development
 if (process.env.NODE_ENV === 'development') {
